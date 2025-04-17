@@ -2,7 +2,9 @@ from flask import Flask, request, render_template
 import requests
 from dotenv import load_dotenv
 import os
-import openai
+from openai import OpenAI
+from bs4 import BeautifulSoup
+
 
 load_dotenv()  # <-- Don't forget to load .env variables
 
@@ -10,7 +12,6 @@ app = Flask(__name__)
 
 SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
 
 NEGATIVE_KEYWORDS = [
     "Scam", "Scammy", "Fraud", "Rip-off", "Rip off", "Fake", "Con", "Con job", "Complaint", "Complaints",
@@ -20,6 +21,9 @@ NEGATIVE_KEYWORDS = [
     "Nightmare", "Red flag", "Would not recommend", "Incompetent", "Garbage", "Trash", "Phishing", "No refund",
     "Refund issues", "Class action", "BBB complaint", "Cover-up", "Ruined", "Reviews"
 ]
+
+# NEGATIVE_KEYWORDS = [
+#     "Scam", "Scammy"]
 
 @app.route('/')
 def index():
@@ -37,6 +41,7 @@ def search():
     for query in queries:
         print(f"[DEBUG] Searching with query: {query}")
         results = search_search1api(query)
+        print("[RESULTS: ]", results)
         print(f"[DEBUG] Found {len(results)} results for query: {query}")
         all_results.extend(results)
 
@@ -44,7 +49,7 @@ def search():
     seen = set()
     unique_urls = []
     for res in all_results:
-        url = res.get("url")
+        url = res.get("link")
         if url and url not in seen:
             seen.add(url)
             unique_urls.append(url)
@@ -88,22 +93,38 @@ def search_search1api(query):
         print(f"[ERROR] Search1API error for query '{query}': {e}")
         return []
 
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 def summarize_url(brand, url):
-    prompt = f"""
-You're analyzing content for negative mentions of the brand "{brand}" found at this link: {url}.
-Please summarize the negative content. If there is no meaningful negative content, say nothing.
+    try:
+        # Fetch page content
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(resp.text, 'html.parser')
+
+        # Get readable text
+        text = soup.get_text(separator=' ', strip=True)
+        text = text[:4000]  # Trim to fit token limit
+
+        prompt = f"""
+You're analyzing content for negative mentions of the brand "{brand}" from the text below, which was extracted from the link: {url}
+
+TEXT:
+{text}
+
+Please summarize the negative content about {brand}. If the link even mentions the name of the brand then please include in the final list otherwise do not. 
 """
 
-    try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4
         )
-        result = response["choices"][0]["message"]["content"].strip()
+        result = response.choices[0].message.content.strip()
         return result if result and "no meaningful negative content" not in result.lower() else None
+
     except Exception as e:
-        print(f"[ERROR] OpenAI error summarizing URL '{url}': {e}")
+        print(f"[ERROR] Error summarizing URL '{url}': {e}")
         return None
 
 if __name__ == '__main__':
