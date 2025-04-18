@@ -12,15 +12,15 @@ app = Flask(__name__)
 
 SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+MAX_RESULTS = 20
+NEGATIVE_KEYWORDS = [
+    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
+    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
+    "Unprofessional", "Misleading", "Shady"
+]
 
 # NEGATIVE_KEYWORDS = [
-#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
-#     "Unprofessional", "Misleading", "Shady"
-# ]
-
-NEGATIVE_KEYWORDS = [
-    "Scam"]
+#     "Scam"]
 
 @app.route('/')
 def index():
@@ -112,7 +112,7 @@ def search_search1api(query):
     payload = {
         "query": query,
         "search_service": "google",  # or "all" if supported
-        "max_results": 20,
+        "max_results": MAX_RESULTS,
         "crawl_results": 0,
         "image": False,
         "language": ""
@@ -137,7 +137,7 @@ def search_search1api_reddit(query):
     payload = {
         "query": query,
         "search_service": "reddit",  # or "all" if supported
-        "max_results": 20,
+        "max_results": MAX_RESULTS,
         "crawl_results": 0,
         "image": False,
         "language": ""
@@ -162,7 +162,7 @@ def search_search1api_youtube(query):
     payload = {
         "query": query,
         "search_service": "youtube",  # or "all" if supported
-        "max_results": 20,
+        "max_results": MAX_RESULTS,
         "crawl_results": 0,
         "image": False,
         "language": ""
@@ -187,7 +187,7 @@ def search_search1api_x(query):
     payload = {
         "query": query,
         "search_service": "x",  # or "all" if supported
-        "max_results": 20,
+        "max_results": MAX_RESULTS,
         "crawl_results": 0,
         "image": False,
         "language": ""
@@ -242,13 +242,29 @@ Review each of the following items and summarize any negative content about {bra
 If the content mentions the brand name or anything similar to it, include it in your analysis.
 For each item, provide a clear summary of negative content or indicate if there is none.
 
+IMPORTANT: 
+1. If the content is completely unrelated to the brand "{brand}" or doesn't mention it at all, 
+   respond with "UNRELATED" for that item.
+2. For each item, also identify the source platform of the URL (Google, Reddit, YouTube, X/Twitter, TikTok, or Other).
+
 """
-        
+
         # Add each URL and snippet to the prompt
         for idx, (url, snippet, _) in enumerate(batch):
             combined_prompt += f"\nITEM {idx+1}:\nURL: {url}\nContent: {snippet}\n"
         
-        combined_prompt += f"\nFor each item, provide a summary in this format:\nITEM 1: [summary or 'No negative content']\nITEM 2: [summary or 'No negative content']\n... and so on."
+        combined_prompt += f"""
+For each item, provide a summary in this format:
+ITEM 1: 
+SOURCE: [Google/Reddit/YouTube/X/TikTok/Other]
+SUMMARY: [summary or 'No negative content' or 'UNRELATED']
+
+ITEM 2: 
+SOURCE: [Google/Reddit/YouTube/X/TikTok/Other]
+SUMMARY: [summary or 'No negative content' or 'UNRELATED']
+
+... and so on.
+"""
         
         try:
             response = client.chat.completions.create(
@@ -259,38 +275,61 @@ For each item, provide a clear summary of negative content or indicate if there 
             result = response.choices[0].message.content.strip()
             
             # Parse the results for each URL
-            lines = result.split('\n')
-            item_results = {}
-            current_item = None
-            current_text = []
+            items = result.split("ITEM ")[1:]  # Split by "ITEM " and remove the first empty element
             
-            for line in lines:
-                if line.startswith("ITEM ") and ":" in line:
-                    # Save previous item if exists
-                    if current_item is not None and current_text:
-                        item_results[current_item] = "\n".join(current_text)
+            for idx, item_text in enumerate(items):
+                if idx < len(batch):
+                    url, snippet, original_source = batch[idx]
                     
-                    # Start new item
-                    parts = line.split(":", 1)
-                    current_item = int(parts[0].replace("ITEM ", "").strip())
-                    current_text = [parts[1].strip()] if len(parts) > 1 else []
-                elif current_item is not None:
-                    current_text.append(line)
-            
-            # Save the last item
-            if current_item is not None and current_text:
-                item_results[current_item] = "\n".join(current_text)
-            
-            # Add results to summarized list
-            for idx, (url, snippet, source) in enumerate(batch):
-                item_num = idx + 1
-                if item_num in item_results:
-                    summary = item_results[item_num]
-                    if "no negative content" not in summary.lower():
-                        print(f"[SUMMARY {i+idx+1}] {summary[:100]}...")
-                        summarized.append({"url": url, "summary": summary, "source": source})
+                    # Extract source and summary from the item text
+                    source_match = None
+                    summary_match = None
+                    
+                    lines = item_text.split('\n')
+                    for i, line in enumerate(lines):
+                        if line.startswith("SOURCE:"):
+                            source_match = line.replace("SOURCE:", "").strip().lower()
+                        elif line.startswith("SUMMARY:"):
+                            # Get the summary (which might span multiple lines)
+                            summary_lines = []
+                            summary_lines.append(line.replace("SUMMARY:", "").strip())
+                            
+                            # Add any additional lines that are part of the summary
+                            for j in range(i+1, len(lines)):
+                                if not (lines[j].startswith("ITEM") or lines[j].startswith("SOURCE:")):
+                                    summary_lines.append(lines[j])
+                            
+                            summary_match = "\n".join(summary_lines)
+                            break
+                    
+                    # Use the detected source or fall back to the original source
+                    detected_source = source_match if source_match else original_source
+                    
+                    # Map the detected source to our categories
+                    if detected_source:
+                        if "reddit" in detected_source:
+                            detected_source = "reddit"
+                        elif "youtube" in detected_source:
+                            detected_source = "youtube"
+                        elif "x" in detected_source or "twitter" in detected_source:
+                            detected_source = "x"
+                        elif "tiktok" in detected_source:
+                            detected_source = "tiktok"
+                        elif "google" in detected_source:
+                            detected_source = "google"
+                        else:
+                            detected_source = "google"  # Default to google for other sources
+                    
+                    # Skip unrelated content or content with no negative mentions
+                    if summary_match and not ("unrelated" in summary_match.lower() or "no negative content" in summary_match.lower()):
+                        print(f"[SUMMARY {i+idx+1}] Source: {detected_source}, Summary: {summary_match[:100]}...")
+                        summarized.append({
+                            "url": url, 
+                            "summary": summary_match, 
+                            "source": detected_source
+                        })
                     else:
-                        print(f"[INFO] No meaningful content found at: {url}")
+                        print(f"[INFO] No relevant content found at: {url}")
                         
         except Exception as e:
             print(f"[ERROR] Error processing batch: {e}")
