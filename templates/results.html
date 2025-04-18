@@ -1,18 +1,166 @@
 <!DOCTYPE html>
-<html>
-<head><title>Results</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reputation Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        .source-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .result-card {
+            background-color: #f9f9f9;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        .result-url {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: bold;
+            word-break: break-all;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .result-url:hover {
+            text-decoration: underline;
+        }
+        .result-summary {
+            white-space: pre-line;
+        }
+        .source-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        .empty-message {
+            color: #7f8c8d;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        .back-button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+        .source-header {
+            display: flex;
+            align-items: center;
+        }
+        .count-badge {
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            padding: 5px 10px;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
 <body>
-  <h2>Negative Mentions</h2>
-  {% if results %}
-    {% for r in results %}
-      <div>
-        <a href="{{ r.url }}" target="_blank">{{ r.url }}</a>
-        <p>{{ r.summary }}</p>
-        <hr>
-      </div>
-    {% endfor %}
-  {% else %}
-    <p>No negative mentions found!</p>
-  {% endif %}
+    <div class="container">
+        <h1>Reputation Analysis Results for "{{ brand }}"</h1>
+        
+        {% if results.reddit %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png" class="source-icon" alt="Reddit icon">Reddit <span class="count-badge">{{ results.reddit|length }}</span></h2>
+            </div>
+            {% for result in results.reddit %}
+            <div class="result-card">
+                <a href="{{ result.url[0] }}" target="_blank" class="result-url">{{ result.url[0] }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if results.youtube %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://www.youtube.com/s/desktop/12d6b690/img/favicon_144x144.png" class="source-icon" alt="YouTube icon">YouTube <span class="count-badge">{{ results.youtube|length }}</span></h2>
+            </div>
+            {% for result in results.youtube %}
+            <div class="result-card">
+                <a href="{{ result.url[0] }}" target="_blank" class="result-url">{{ result.url[0] }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if results.x %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://abs.twimg.com/responsive-web/client-web/icon-ios.b1fc727a.png" class="source-icon" alt="X icon">X (Twitter) <span class="count-badge">{{ results.x|length }}</span></h2>
+            </div>
+            {% for result in results.x %}
+            <div class="result-card">
+                <a href="{{ result.url[0] }}" target="_blank" class="result-url">{{ result.url[0] }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if results.google %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" class="source-icon" alt="Google icon">Other Sources <span class="count-badge">{{ results.google|length }}</span></h2>
+            </div>
+            {% for result in results.google %}
+            <div class="result-card">
+                <a href="{{ result.url[0] }}" target="_blank" class="result-url">{{ result.url[0] }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if not results.reddit and not results.youtube and not results.x and not results.google %}
+        <div class="empty-message">
+            <p>No negative content found for "{{ brand }}".</p>
+        </div>
+        {% endif %}
+        
+        <a href="/" class="back-button">Back to Search</a>
+    </div>
 </body>
 </html>
