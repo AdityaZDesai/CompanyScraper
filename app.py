@@ -13,14 +13,14 @@ app = Flask(__name__)
 SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MAX_RESULTS = 20
-NEGATIVE_KEYWORDS = [
-    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
-    "Unprofessional", "Misleading", "Shady"
-]
-
 # NEGATIVE_KEYWORDS = [
-#     "Scam"]
+#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
+#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
+#     "Unprofessional", "Misleading", "Shady"
+# ]
+
+NEGATIVE_KEYWORDS = ["Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
+    "Terrible", "Horrible", "Awful"]
 
 @app.route('/')
 def index():
@@ -42,9 +42,9 @@ def search():
         for result in results:
             result['source'] = 'google'
             
-        results_reddit = search_search1api_reddit(query)
-        for result in results_reddit:
-            result['source'] = 'reddit'
+        # results_reddit = search_search1api_reddit(query)
+        # for result in results_reddit:
+        #     result['source'] = 'reddit'
             
         results_youtube = search_search1api_youtube(query)
         for result in results_youtube:
@@ -56,12 +56,12 @@ def search():
             
         # Debug output
         print(f"[DEBUG] Found {len(results)} Google results for query: {query}")
-        print(f"[DEBUG] Found {len(results_reddit)} Reddit results for query: {query}")
+        #print(f"[DEBUG] Found {len(results_reddit)} Reddit results for query: {query}")
         print(f"[DEBUG] Found {len(results_youtube)} YouTube results for query: {query}")
         print(f"[DEBUG] Found {len(results_x)} X results for query: {query}")
         
         all_results.extend(results)
-        all_results.extend(results_reddit)
+        #all_results.extend(results_reddit)
         all_results.extend(results_youtube)
         all_results.extend(results_x)
 
@@ -91,7 +91,11 @@ def search():
         'reddit': [],
         'youtube': [],
         'x': [],
-        'google': []
+        'google': [],
+        'facebook': [],
+        'trustpilot': [],
+        'google_reviews': [],
+        'other': []
     }
     
     for result in summarized:
@@ -245,7 +249,17 @@ For each item, provide a clear summary of negative content or indicate if there 
 IMPORTANT: 
 1. If the content is completely unrelated to the brand "{brand}" or doesn't mention it at all, 
    respond with "UNRELATED" for that item.
-2. For each item, also identify the source platform of the URL (Google, Reddit, YouTube, X/Twitter, TikTok, or Other).
+2. For each item, identify the source platform of the URL as specifically as possible:
+   - Google (general search results)
+   - Google Reviews (specifically customer reviews on Google)
+   - Trustpilot (reviews from Trustpilot)
+   - Reddit
+   - YouTube
+   - X/Twitter
+   - TikTok
+   - Facebook
+   - Other (specify if possible)
+3. Pay special attention to review content from Google Reviews and Trustpilot, as these often contain valuable customer feedback.
 
 """
 
@@ -256,11 +270,11 @@ IMPORTANT:
         combined_prompt += f"""
 For each item, provide a summary in this format:
 ITEM 1: 
-SOURCE: [Google/Reddit/YouTube/X/TikTok/Other]
+SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Other]
 SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 
 ITEM 2: 
-SOURCE: [Google/Reddit/YouTube/X/TikTok/Other]
+SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Other]
 SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 
 ... and so on.
@@ -315,10 +329,16 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
                             detected_source = "x"
                         elif "tiktok" in detected_source:
                             detected_source = "tiktok"
+                        elif "facebook" in detected_source:
+                            detected_source = "facebook"
+                        elif "trustpilot" in detected_source:
+                            detected_source = "trustpilot"
+                        elif "google review" in detected_source:
+                            detected_source = "google_reviews"
                         elif "google" in detected_source:
                             detected_source = "google"
                         else:
-                            detected_source = "google"  # Default to google for other sources
+                            detected_source = "other"  # Changed default to "other"
                     
                     # Skip unrelated content or content with no negative mentions
                     if summary_match and not ("unrelated" in summary_match.lower() or "no negative content" in summary_match.lower()):
