@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 from bs4 import BeautifulSoup
-
+from drive import upload_to_folder
+from weasyprint import HTML
 
 load_dotenv()  # <-- Don't forget to load .env variables
 
@@ -12,15 +13,15 @@ app = Flask(__name__)
 
 SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
 NEGATIVE_KEYWORDS = [
     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
-    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review"
+    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok"
 ]
 
-# NEGATIVE_KEYWORDS = ["Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-#     "Terrible", "Horrible", "Awful"]
+#NEGATIVE_KEYWORDS = ["Scam"]
 
 @app.route('/')
 def index():
@@ -63,7 +64,7 @@ def search():
         all_results.extend(results)
         #all_results.extend(results_reddit)
         all_results.extend(results_youtube)
-        all_results.extend(results_x)
+        #all_results.extend(results_x)
 
     # Remove duplicates while preserving source information
     seen = set()
@@ -105,8 +106,28 @@ def search():
             grouped_results[source].append(result)
         else:
             grouped_results['google'].append(result)
-    
+
+    generate_pdf(grouped_results, brand)
     return render_template("results.html", results=grouped_results, brand=brand)
+
+
+def generate_pdf(grouped_results, brand):
+    rendered_html = render_template('results.html', results=grouped_results, brand=brand)
+    
+    # Convert HTML to PDF
+    pdf_filename = brand
+    HTML(string=rendered_html).write_pdf(pdf_filename)
+
+    # Call upload function here
+    folder_id = FOLDER_ID
+    file_id = upload_to_folder(folder_id, pdf_filename)
+
+    #os.remove(pdf_filename)  # Clean up the local file
+    print(f'PDF Uploaded {file_id}')
+    return f'PDF uploaded! File ID: {file_id}'
+
+
+
 
 def search_search1api(query):
     url = "https://api.search1api.com/search"
@@ -207,7 +228,7 @@ It doesn't specfically have to mention the exact name of the brand, but anything
         print(f"[ERROR] Error summarizing URL '{url}': {e}")
         return None
 
-def batch_summarize_urls(brand, url_snippet_pairs, batch_size=5):
+def batch_summarize_urls(brand, url_snippet_pairs, batch_size=10):
     """Process multiple URLs in batches to reduce API calls"""
     summarized = []
     
