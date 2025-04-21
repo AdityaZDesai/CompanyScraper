@@ -95,6 +95,7 @@ def search():
         'facebook': [],
         'trustpilot': [],
         'google_reviews': [],
+        'tiktok': [],
         'other': []
     }
     

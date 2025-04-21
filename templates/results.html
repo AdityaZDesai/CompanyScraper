@@ -92,129 +92,155 @@
             margin-left: 10px;
             font-size: 14px;
         }
+        .no-results {
+            color: #95a5a6;
+            font-style: italic;
+            padding: 15px;
+            text-align: center;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Reputation Analysis Results for "{{ brand }}"</h1>
         
-        {% if results.reddit %}
+        <!-- Reddit Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png" class="source-icon" alt="Reddit icon">Reddit <span class="count-badge">{{ results.reddit|length }}</span></h2>
+                <h2><img src="https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png" class="source-icon" alt="Reddit icon">Reddit <span class="count-badge">{{ results.reddit|length if results.reddit else 0 }}</span></h2>
             </div>
-            {% for result in results.reddit %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.reddit %}
+                {% for result in results.reddit %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on Reddit.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.youtube %}
+        <!-- YouTube Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.youtube.com/s/desktop/12d6b690/img/favicon_144x144.png" class="source-icon" alt="YouTube icon">YouTube <span class="count-badge">{{ results.youtube|length }}</span></h2>
+                <h2><img src="https://www.youtube.com/s/desktop/12d6b690/img/favicon_144x144.png" class="source-icon" alt="YouTube icon">YouTube <span class="count-badge">{{ results.youtube|length if results.youtube else 0 }}</span></h2>
             </div>
-            {% for result in results.youtube %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.youtube %}
+                {% for result in results.youtube %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on YouTube.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.x %}
+        <!-- X (Twitter) Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://abs.twimg.com/responsive-web/client-web/icon-ios.b1fc727a.png" class="source-icon" alt="X icon">X (Twitter) <span class="count-badge">{{ results.x|length }}</span></h2>
+                <h2><img src="https://abs.twimg.com/responsive-web/client-web/icon-ios.b1fc727a.png" class="source-icon" alt="X icon">X (Twitter) <span class="count-badge">{{ results.x|length if results.x else 0 }}</span></h2>
             </div>
-            {% for result in results.x %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.x %}
+                {% for result in results.x %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on X (Twitter).</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.trustpilot %}
+        <!-- Trustpilot Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://consumer-images.trustpilot.net/_next/static/media/favicon-192.png" class="source-icon" alt="Trustpilot icon">Trustpilot <span class="count-badge">{{ results.trustpilot|length }}</span></h2>
+                <h2><img src="https://consumer-images.trustpilot.net/_next/static/media/favicon-192.png" class="source-icon" alt="Trustpilot icon">Trustpilot <span class="count-badge">{{ results.trustpilot|length if results.trustpilot else 0 }}</span></h2>
             </div>
-            {% for result in results.trustpilot %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.trustpilot %}
+                {% for result in results.trustpilot %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on Trustpilot.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.google_reviews %}
+        <!-- Google Reviews Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.gstatic.com/images/branding/product/2x/maps_96dp.png" class="source-icon" alt="Google Reviews icon">Google Reviews <span class="count-badge">{{ results.google_reviews|length }}</span></h2>
+                <h2><img src="https://www.gstatic.com/images/branding/product/2x/maps_96dp.png" class="source-icon" alt="Google Reviews icon">Google Reviews <span class="count-badge">{{ results.google_reviews|length if results.google_reviews else 0 }}</span></h2>
             </div>
-            {% for result in results.google_reviews %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.google_reviews %}
+                {% for result in results.google_reviews %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found in Google Reviews.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.facebook %}
+        <!-- Facebook Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico" class="source-icon" alt="Facebook icon">Facebook <span class="count-badge">{{ results.facebook|length }}</span></h2>
+                <h2><img src="https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico" class="source-icon" alt="Facebook icon">Facebook <span class="count-badge">{{ results.facebook|length if results.facebook else 0 }}</span></h2>
             </div>
-            {% for result in results.facebook %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.facebook %}
+                {% for result in results.facebook %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on Facebook.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.google %}
+        <!-- Google Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" class="source-icon" alt="Google icon">Google <span class="count-badge">{{ results.google|length }}</span></h2>
+                <h2><img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" class="source-icon" alt="Google icon">Google <span class="count-badge">{{ results.google|length if results.google else 0 }}</span></h2>
             </div>
-            {% for result in results.google %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.google %}
+                {% for result in results.google %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found in Google search results.</div>
+            {% endif %}
         </div>
-        {% endif %}
         
-        {% if results.other %}
+        <!-- Other Sources Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.google.com/s2/favicons?domain=example.com" class="source-icon" alt="Other icon">Other Sources <span class="count-badge">{{ results.other|length }}</span></h2>
+                <h2><img src="https://www.google.com/s2/favicons?domain=example.com" class="source-icon" alt="Other icon">Other Sources <span class="count-badge">{{ results.other|length if results.other else 0 }}</span></h2>
             </div>
-            {% for result in results.other %}
-            <div class="result-card">
-                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
-                <div class="result-summary">{{ result.summary }}</div>
-            </div>
-            {% endfor %}
+            {% if results.other %}
+                {% for result in results.other %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found from other sources.</div>
+            {% endif %}
         </div>
-        {% endif %}
-        
-        {% if not results.reddit and not results.youtube and not results.x and not results.google and not results.trustpilot and not results.google_reviews and not results.facebook and not results.other %}
-        <div class="empty-message">
-            <p>No negative content found for "{{ brand }}".</p>
-        </div>
-        {% endif %}
         
         <a href="/" class="back-button">Back to Search</a>
     </div>
