@@ -140,10 +140,52 @@
         </div>
         {% endif %}
         
+        {% if results.trustpilot %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://consumer-images.trustpilot.net/_next/static/media/favicon-192.png" class="source-icon" alt="Trustpilot icon">Trustpilot <span class="count-badge">{{ results.trustpilot|length }}</span></h2>
+            </div>
+            {% for result in results.trustpilot %}
+            <div class="result-card">
+                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if results.google_reviews %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://www.gstatic.com/images/branding/product/2x/maps_96dp.png" class="source-icon" alt="Google Reviews icon">Google Reviews <span class="count-badge">{{ results.google_reviews|length }}</span></h2>
+            </div>
+            {% for result in results.google_reviews %}
+            <div class="result-card">
+                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if results.facebook %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico" class="source-icon" alt="Facebook icon">Facebook <span class="count-badge">{{ results.facebook|length }}</span></h2>
+            </div>
+            {% for result in results.facebook %}
+            <div class="result-card">
+                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         {% if results.google %}
         <div class="source-section">
             <div class="source-header">
-                <h2><img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" class="source-icon" alt="Google icon">Other Sources <span class="count-badge">{{ results.google|length }}</span></h2>
+                <h2><img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" class="source-icon" alt="Google icon">Google <span class="count-badge">{{ results.google|length }}</span></h2>
             </div>
             {% for result in results.google %}
             <div class="result-card">
@@ -154,7 +196,21 @@
         </div>
         {% endif %}
         
-        {% if not results.reddit and not results.youtube and not results.x and not results.google %}
+        {% if results.other %}
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://www.google.com/s2/favicons?domain=example.com" class="source-icon" alt="Other icon">Other Sources <span class="count-badge">{{ results.other|length }}</span></h2>
+            </div>
+            {% for result in results.other %}
+            <div class="result-card">
+                <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                <div class="result-summary">{{ result.summary }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if not results.reddit and not results.youtube and not results.x and not results.google and not results.trustpilot and not results.google_reviews and not results.facebook and not results.other %}
         <div class="empty-message">
             <p>No negative content found for "{{ brand }}".</p>
         </div>
