@@ -208,6 +208,23 @@
             {% endif %}
         </div>
         
+        <!-- TikTok Section - Always shown -->
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://sf16-scmcdn-va.ibytedtos.com/goofy/tiktok/web/node/_next/static/images/logo-192x192-4a90c0ca.png" class="source-icon" alt="TikTok icon">TikTok <span class="count-badge">{{ results.tiktok|length if results.tiktok else 0 }}</span></h2>
+            </div>
+            {% if results.tiktok %}
+                {% for result in results.tiktok %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on TikTok.</div>
+            {% endif %}
+        </div>
+        
         <!-- Google Section - Always shown -->
         <div class="source-section">
             <div class="source-header">

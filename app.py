@@ -50,15 +50,15 @@ def search():
         for result in results_youtube:
             result['source'] = 'youtube'
             
-        results_x = search_search1api_x(query)
-        for result in results_x:
-            result['source'] = 'x'
+        # results_x = search_search1api_x(query)
+        # for result in results_x:
+        #     result['source'] = 'x'
             
         # Debug output
         print(f"[DEBUG] Found {len(results)} Google results for query: {query}")
         #print(f"[DEBUG] Found {len(results_reddit)} Reddit results for query: {query}")
         print(f"[DEBUG] Found {len(results_youtube)} YouTube results for query: {query}")
-        print(f"[DEBUG] Found {len(results_x)} X results for query: {query}")
+        #print(f"[DEBUG] Found {len(results_x)} X results for query: {query}")
         
         all_results.extend(results)
         #all_results.extend(results_reddit)
