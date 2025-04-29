@@ -166,7 +166,7 @@ def generate_pdf(grouped_results, brand):
     folder_id = FOLDER_ID
     file_id = upload_to_folder(folder_id, pdf_filename)
 
-    #os.remove(pdf_filename)  # Clean up the local file
+    os.remove(pdf_filename)  # Clean up the local file
     print(f'PDF Uploaded {file_id}')
     return f'PDF uploaded! File ID: {file_id}'
 
