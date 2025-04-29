@@ -16,13 +16,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
 NEGATIVE_KEYWORDS = [
-    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
+    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint",
+    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheating", "Exposed",
     "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
-    "instagram", "scam instagram", "warning instagram"
+    "instagram", "scam instagram"
 ]
 
-#NEGATIVE_KEYWORDS = ["Scam"]
+#NEGATIVE_KEYWORDS = ["Scam","Scammy", "Fraud", "Rip-off", "Fake", "Con"]
 
 @app.route('/')
 def index():
@@ -103,7 +103,7 @@ def search():
         source = res.get("source", "other")
         
         if res.get("snippet"):
-            snippet = res.get("snippet")
+            snippet = res.get("snippet")[:300]
         else:
             snippet = res.get("title")
             
