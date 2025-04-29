@@ -15,14 +15,14 @@ SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
-# NEGATIVE_KEYWORDS = [
-#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
-#     "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
-#     "instagram", "scam instagram", "warning instagram"
-# ]
+NEGATIVE_KEYWORDS = [
+    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
+    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
+    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
+    "instagram", "scam instagram", "warning instagram"
+]
 
-NEGATIVE_KEYWORDS = ["Scam"]
+#NEGATIVE_KEYWORDS = ["Scam"]
 
 @app.route('/')
 def index():
