@@ -15,13 +15,14 @@ SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
-NEGATIVE_KEYWORDS = [
-    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
-    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
-    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok"
-]
+# NEGATIVE_KEYWORDS = [
+#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint", "Complaints",
+#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheated", "Cheating", "Exposed",
+#     "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
+#     "instagram", "scam instagram", "warning instagram"
+# ]
 
-#NEGATIVE_KEYWORDS = ["Scam"]
+NEGATIVE_KEYWORDS = ["Scam"]
 
 @app.route('/')
 def index():
@@ -31,40 +32,68 @@ def index():
 def search():
     brand = request.form["brand"]
     website = request.form["website"]
+    description = request.form["description"]
+    keyword = request.form["keyword"]
     print(f"[INFO] Searching for brand: {brand}, Website: {website}")
+    print(f"[INFO] Business description: {description}")
+    print(f"[INFO] Primary keyword: {keyword}")
 
-    queries = [f"{brand} {kw}" for kw in NEGATIVE_KEYWORDS]
+    # Create search queries with brand name and keyword
+    brand_keyword = f"{brand} {keyword}"
+    queries = [f"{brand_keyword} {kw}" for kw in NEGATIVE_KEYWORDS]
     all_results = []
+    
+    # Track any API errors
+    api_errors = []
 
     for query in queries:
         print(f"[DEBUG] Searching with query: {query}")
-        # Add source information to each result
-        results = search_search1api(query)
-        for result in results:
-            result['source'] = 'google'
+        try:
+            # Add source information to each result
+            results = search_search1api(query)
+            for result in results:
+                result['source'] = 'google'
+                
+            results_reddit = search_search1api_reddit(query)
+            for result in results_reddit:
+                result['source'] = 'reddit'
+                
+            results_youtube = search_search1api_youtube(query)
+            for result in results_youtube:
+                result['source'] = 'youtube'
+                
+            results_bing = search_search1api_bing(query)
+            for result in results_bing:
+                result['source'] = 'bing'
             
-        # results_reddit = search_search1api_reddit(query)
-        # for result in results_reddit:
-        #     result['source'] = 'reddit'
+            results_yahoo = search_search1api_yahoo(query)
+            for result in results_yahoo:
+                result['source'] = 'yahoo'
             
-        results_youtube = search_search1api_youtube(query)
-        for result in results_youtube:
-            result['source'] = 'youtube'
-            
-        # results_x = search_search1api_x(query)
-        # for result in results_x:
-        #     result['source'] = 'x'
-            
-        # Debug output
-        print(f"[DEBUG] Found {len(results)} Google results for query: {query}")
-        #print(f"[DEBUG] Found {len(results_reddit)} Reddit results for query: {query}")
-        print(f"[DEBUG] Found {len(results_youtube)} YouTube results for query: {query}")
-        #print(f"[DEBUG] Found {len(results_x)} X results for query: {query}")
-        
-        all_results.extend(results)
-        #all_results.extend(results_reddit)
-        all_results.extend(results_youtube)
-        #all_results.extend(results_x)
+            # Debug output
+            print(f"[DEBUG] Found {len(results)} Google results for query: {query}")
+            print(f"[DEBUG] Found {len(results_reddit)} Reddit results for query: {query}")
+            print(f"[DEBUG] Found {len(results_youtube)} YouTube results for query: {query}")
+            print(f"[DEBUG] Found {len(results_bing)} Bing results for query: {query}")
+            print(f"[DEBUG] Found {len(results_yahoo)} Yahoo results for query: {query}")
+
+            all_results.extend(results)
+            all_results.extend(results_reddit)
+            all_results.extend(results_youtube)
+            all_results.extend(results_yahoo)
+            all_results.extend(results_bing)
+
+            # Debug output
+            print(f"[DEBUG] Total results after query '{query}': {len(all_results)}")
+        except Exception as e:
+            error_msg = f"Error searching for query '{query}': {str(e)}"
+            print(f"[ERROR] {error_msg}")
+            api_errors.append(error_msg)
+
+    # If we have no results and there were API errors, return error page
+    if not all_results and api_errors:
+        return render_template("results.html", results={}, brand=brand, 
+                              api_errors=api_errors, search_error=True)
 
     # Remove duplicates while preserving source information
     seen = set()
@@ -85,7 +114,14 @@ def search():
     print(f"[INFO] Total unique URLs found: {len(unique_urls)}")
 
     # Batch process URLs instead of one at a time
-    summarized = batch_summarize_urls(brand, unique_urls)
+    try:
+        summarized = batch_summarize_urls(brand, description, unique_urls)
+    except Exception as e:
+        error_msg = f"Error summarizing content: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        api_errors.append(error_msg)
+        return render_template("results.html", results={}, brand=brand, 
+                              api_errors=api_errors, search_error=True)
     
     # Group results by source
     grouped_results = {
@@ -97,6 +133,7 @@ def search():
         'trustpilot': [],
         'google_reviews': [],
         'tiktok': [],
+        'instagram': [],
         'other': []
     }
     
@@ -107,8 +144,15 @@ def search():
         else:
             grouped_results['google'].append(result)
 
-    generate_pdf(grouped_results, brand)
-    return render_template("results.html", results=grouped_results, brand=brand)
+    try:
+        generate_pdf(grouped_results, brand)
+    except Exception as e:
+        error_msg = f"Error generating PDF: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        api_errors.append(error_msg)
+    
+    return render_template("results.html", results=grouped_results, brand=brand, 
+                          api_errors=api_errors if api_errors else None)
 
 
 def generate_pdf(grouped_results, brand):
@@ -180,7 +224,7 @@ def search_search1api_youtube(query):
         print(f"[ERROR] Search1API error for query '{query}': {e}")
         return []
 
-def search_search1api_x(query):
+def search_search1api_yahoo(query):
     url = "https://api.search1api.com/search"
     headers = {
         "Authorization": f"Bearer {SEARCH1_API_KEY}",
@@ -188,7 +232,7 @@ def search_search1api_x(query):
     }
     payload = {
         "query": query,
-        "search_service": "x",  # or "all" if supported
+        "search_service": "yahoo",  # or "all" if supported
         "max_results": MAX_RESULTS,
         "crawl_results": 0,
         "image": False,
@@ -204,6 +248,60 @@ def search_search1api_x(query):
     except Exception as e:
         print(f"[ERROR] Search1API error for query '{query}': {e}")
         return []
+
+def search_search1api_bing(query):
+    url = "https://api.search1api.com/search"
+    headers = {
+        "Authorization": f"Bearer {SEARCH1_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "query": query,
+        "search_service": "bing",  # or "all" if supported
+        "max_results": MAX_RESULTS,
+        "crawl_results": 0,
+        "image": False,
+        "language": ""
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
+        return data.get("results", [])
+    except Exception as e:
+        print(f"[ERROR] Search1API error for query '{query}': {e}")
+        return []
+
+def search_search1api_reddit(query):
+    url = "https://api.search1api.com/search"
+    headers = {
+        "Authorization": f"Bearer {SEARCH1_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "query": query,
+        "search_service": "reddit",  # or "all" if supported
+        "max_results": MAX_RESULTS,
+        "crawl_results": 0,
+        "image": False,
+        "language": ""
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
+        return data.get("results", [])
+    except Exception as e:
+        print(f"[ERROR] Search1API error for query '{query}': {e}")
+        return []
+
+
+
+
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -228,7 +326,7 @@ It doesn't specfically have to mention the exact name of the brand, but anything
         print(f"[ERROR] Error summarizing URL '{url}': {e}")
         return None
 
-def batch_summarize_urls(brand, url_snippet_pairs, batch_size=10):
+def batch_summarize_urls(brand, description, url_snippet_pairs, batch_size=20):
     """Process multiple URLs in batches to reduce API calls"""
     summarized = []
     
@@ -240,6 +338,8 @@ def batch_summarize_urls(brand, url_snippet_pairs, batch_size=10):
         # Create a combined prompt with all URLs and snippets in this batch
         combined_prompt = f"""
 You're analyzing content for negative mentions of the brand "{brand}". 
+Business description: {description}
+
 Review each of the following items and summarize any negative content about {brand}.
 If the content mentions the brand name or anything similar to it, include it in your analysis.
 For each item, provide a clear summary of negative content or indicate if there is none.
@@ -256,8 +356,10 @@ IMPORTANT:
    - X/Twitter
    - TikTok
    - Facebook
+   -Instagram
    - Other (specify if possible)
 3. Pay special attention to review content from Google Reviews and Trustpilot, as these often contain valuable customer feedback.
+4. Use the business description to better understand the context and identify relevant negative mentions.
 
 """
 
@@ -268,11 +370,11 @@ IMPORTANT:
         combined_prompt += f"""
 For each item, provide a summary in this format:
 ITEM 1: 
-SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Other]
+SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Instagram/Other]
 SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 
 ITEM 2: 
-SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Other]
+SOURCE: [Google/Google Reviews/Trustpilot/Reddit/YouTube/X/TikTok/Facebook/Instagram/Other]
 SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 
 ... and so on.
@@ -327,6 +429,8 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
                             detected_source = "x"
                         elif "tiktok" in detected_source:
                             detected_source = "tiktok"
+                        elif "instagram" in detected_source:
+                            detected_source = "instagram"
                         elif "facebook" in detected_source:
                             detected_source = "facebook"
                         elif "trustpilot" in detected_source:

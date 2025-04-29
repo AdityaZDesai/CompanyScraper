@@ -24,7 +24,7 @@ def upload_to_folder(folder_id, file_name):
         file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
         print(f'File ID: "{file.get("id")}".')
         return file.get("id")
-
+                
     except HttpError as error:
         print(f"An error occurred: {error}")
         return None

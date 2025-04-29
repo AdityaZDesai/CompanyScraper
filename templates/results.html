@@ -106,6 +106,29 @@
     <div class="container">
         <h1>Reputation Analysis Results for "{{ brand }}"</h1>
         
+        {% if search_error %}
+            <div style="background-color: #f8d7da; color: #721c24; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #f5c6cb;">
+                <h3>Error Processing Your Request</h3>
+                <p>We encountered the following errors while processing your request:</p>
+                <ul>
+                    {% for error in api_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                <p>This could be due to API rate limits or service unavailability. Please try again later.</p>
+            </div>
+        {% elif api_errors %}
+            <div style="background-color: #fff3cd; color: #856404; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #ffeeba;">
+                <h3>Warning</h3>
+                <p>We encountered some issues while processing your request, but were able to complete it partially:</p>
+                <ul>
+                    {% for error in api_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
         <!-- Reddit Section - Always shown -->
         <div class="source-section">
             <div class="source-header">
@@ -222,6 +245,23 @@
                 {% endfor %}
             {% else %}
                 <div class="no-results">No negative mentions found on TikTok.</div>
+            {% endif %}
+        </div>
+        
+        <!-- Instagram Section - Always shown -->
+        <div class="source-section">
+            <div class="source-header">
+                <h2><img src="https://static.cdninstagram.com/rsrc.php/v3/yt/r/30PrGfR3xhB.png" class="source-icon" alt="Instagram icon">Instagram <span class="count-badge">{{ results.instagram|length if results.instagram else 0 }}</span></h2>
+            </div>
+            {% if results.instagram %}
+                {% for result in results.instagram %}
+                <div class="result-card">
+                    <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                    <div class="result-summary">{{ result.summary }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No negative mentions found on Instagram.</div>
             {% endif %}
         </div>
         
