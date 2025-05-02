@@ -15,14 +15,14 @@ SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
-NEGATIVE_KEYWORDS = [
-    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint",
-    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheating", "Exposed",
-    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
-    "instagram", "scam instagram"
-]
+# NEGATIVE_KEYWORDS = [
+#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint",
+#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheating", "Exposed",
+#     "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
+#     "instagram", "scam instagram"
+# ]
 
-#NEGATIVE_KEYWORDS = ["Scam","Scammy", "Fraud", "Rip-off", "Fake", "Con"]
+NEGATIVE_KEYWORDS = ["Scam","Scammy", "Fraud", "Rip-off", "Fake", "Con"]
 
 @app.route('/')
 def index():
@@ -326,7 +326,7 @@ It doesn't specfically have to mention the exact name of the brand, but anything
         print(f"[ERROR] Error summarizing URL '{url}': {e}")
         return None
 
-def batch_summarize_urls(brand, description, url_snippet_pairs, batch_size=20):
+def batch_summarize_urls(brand, description, url_snippet_pairs, batch_size=5):
     """Process multiple URLs in batches to reduce API calls"""
     summarized = []
     
