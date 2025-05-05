@@ -2,12 +2,26 @@ from flask import Flask, request, render_template
 import requests
 from dotenv import load_dotenv
 import os
+import sys
 from openai import OpenAI
 from bs4 import BeautifulSoup
 from drive import upload_to_folder
 from weasyprint import HTML
+from tiktok import search_tiktok
 
 load_dotenv()  # <-- Don't forget to load .env variables
+
+# Check command line arguments for mode
+mode = "production"  # Default mode
+if len(sys.argv) > 1:
+    if sys.argv[1].lower() == "test":
+        mode = "test"
+    elif sys.argv[1].lower() == "production":
+        mode = "production"
+    else:
+        print(f"[WARNING] Unknown mode '{sys.argv[1]}'. Using default mode: {mode}")
+        
+print(f"[INFO] Running in {mode.upper()} mode")
 
 app = Flask(__name__)
 
@@ -15,14 +29,24 @@ SEARCH1_API_KEY = os.getenv("SEARCH1_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 MAX_RESULTS = 20
-# NEGATIVE_KEYWORDS = [
-#     "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint",
-#     "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheating", "Exposed",
-#     "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
-#     "instagram", "scam instagram"
-# ]
 
-NEGATIVE_KEYWORDS = ["Scam","Scammy", "Fraud", "Rip-off", "Fake", "Con"]
+# Define both sets of keywords
+PRODUCTION_KEYWORDS = [
+    "Scam", "Scammy", "Fraud", "Rip-off", "Fake", "Con", "Con job", "Complaint",
+    "Terrible", "Horrible", "Awful", "Bad service", "Warning", "Beware", "Cheating", "Exposed",
+    "Unprofessional", "Misleading", "Shady", "scam reddit", "reddit", "google reviews", "trustpilot review", "scam tiktok",
+    "instagram", "scam instagram"
+]
+
+TEST_KEYWORDS = ["Scam"]
+
+# Set keywords and debug mode based on the selected mode
+if mode == "test":
+    NEGATIVE_KEYWORDS = TEST_KEYWORDS
+    debug_mode = True
+else:  # production mode
+    NEGATIVE_KEYWORDS = PRODUCTION_KEYWORDS
+    debug_mode = False
 
 @app.route('/')
 def index():
@@ -89,6 +113,10 @@ def search():
             error_msg = f"Error searching for query '{query}': {str(e)}"
             print(f"[ERROR] {error_msg}")
             api_errors.append(error_msg)
+
+    results_tiktok = search_tiktok(brand_keyword, 40)
+    all_results.extend(results_tiktok) 
+
 
     # If we have no results and there were API errors, return error page
     if not all_results and api_errors:
@@ -305,26 +333,6 @@ def search_search1api_reddit(query):
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-def summarize_url(brand, url, snippet):
-    try:
-        prompt = f"""
-You're analyzing content for negative mentions of the brand "{brand}". This is the content {snippet}.
-
-Please summarize the negative content about {brand}. If the content even mentions the name of the brand then please include in the final list otherwise do not. 
-It doesn't specfically have to mention the exact name of the brand, but anything similar to it. 
-"""
-
-        response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
-        )
-        result = response.choices[0].message.content.strip()
-        return result if result and "no meaningful negative content" not in result.lower() else None
-
-    except Exception as e:
-        print(f"[ERROR] Error summarizing URL '{url}': {e}")
-        return None
 
 def batch_summarize_urls(brand, description, url_snippet_pairs, batch_size=5):
     """Process multiple URLs in batches to reduce API calls"""
@@ -459,4 +467,7 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
     return summarized
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    if mode == "production":
+        app.run(debug=debug_mode, port=5000, host="0.0.0.0")
+    else:
+        app.run(debug=debug_mode)
