@@ -42,7 +42,8 @@ def batch_summarize_urls_with_gemini(brand, description, url_snippet_pairs, batc
         # Build the combined prompt
         prompt = f"""
 You are a TikTok content analyst. For each video below, carefully read the video description and full transcript, then identify any negative mentions, criticisms, complaints, warnings or expressions of dissatisfaction about the brand "{brand}". Think step-by-step:
-
+The business is described as:
+\"\"\"{description}\"\"\"
 1. Scan the description for any negative words or phrases (e.g. “scam,” “rip-off,” “unprofessional,” “beware,” “terrible,” etc.).
 2. Scan the transcript for the same, and look for tone—questions about quality, service, or integrity count as negative.
 3. If you find any negative content, summarize it concisely. If you find multiple distinct complaints, list them.

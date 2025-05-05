@@ -9,7 +9,8 @@ from drive import upload_to_folder
 from weasyprint import HTML
 from tiktok import search_tiktok
 from tiktok_transcript import extract_tiktok_transcripts
-from gemini import batch_summarize_urls_with_gemini
+from gemini import batch_summarize_urls_with_gemini, call_gemini_api
+
 
 load_dotenv()  # <-- Don't forget to load .env variables
 
@@ -116,7 +117,7 @@ def search():
             print(f"[ERROR] {error_msg}")
             api_errors.append(error_msg)
 
-    results_tiktok = search_tiktok(brand, 40)
+    results_tiktok = search_tiktok(brand, 100)
     tiktok_urls = [result.get("link") for result in results_tiktok if result.get("link")]
     tiktok_transcripts = []
     if tiktok_urls:
@@ -412,12 +413,8 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 """
         
         try:
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": combined_prompt}],
-                temperature=0.4
-            )
-            result = response.choices[0].message.content.strip()
+            # Replace OpenAI API call with Gemini API call
+            result = call_gemini_api(combined_prompt)
             
             # Parse the results for each URL
             items = result.split("ITEM ")[1:]  # Split by "ITEM " and remove the first empty element
