@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from drive import upload_to_folder
 from weasyprint import HTML
 from tiktok import search_tiktok
+from tiktok_transcript import extract_tiktok_transcripts
+from gemini import batch_summarize_urls_with_gemini
 
 load_dotenv()  # <-- Don't forget to load .env variables
 
@@ -115,7 +117,17 @@ def search():
             api_errors.append(error_msg)
 
     results_tiktok = search_tiktok(brand_keyword, 40)
-    all_results.extend(results_tiktok) 
+    tiktok_urls = [result.get("link") for result in results_tiktok if result.get("link")]
+    tiktok_transcripts = []
+    if tiktok_urls:
+        try:
+            tiktok_transcripts = extract_tiktok_transcripts(tiktok_urls)
+            print(f"[INFO] Successfully extracted {len(tiktok_transcripts)} TikTok transcripts")
+        except Exception as e:
+            error_msg = f"Error extracting TikTok transcripts: {str(e)}"
+            print(f"[ERROR] {error_msg}")
+            api_errors.append(error_msg)
+
 
 
     # If we have no results and there were API errors, return error page
@@ -143,7 +155,18 @@ def search():
 
     # Batch process URLs instead of one at a time
     try:
-        summarized = batch_summarize_urls(brand, description, unique_urls)
+        summarized = batch_summarize_urls(brand, description, unique_urls, 10)
+    except Exception as e:
+        error_msg = f"Error summarizing content: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        api_errors.append(error_msg)
+        return render_template("results.html", results={}, brand=brand, 
+                              api_errors=api_errors, search_error=True)
+
+    #try batch process tiktok urls using gemini
+        # Batch process URLs instead of one at a time
+    try:
+        summarized.extend(batch_summarize_urls_with_gemini(brand, description, tiktok_transcripts, 5))
     except Exception as e:
         error_msg = f"Error summarizing content: {str(e)}"
         print(f"[ERROR] {error_msg}")

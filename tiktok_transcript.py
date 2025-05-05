@@ -30,12 +30,15 @@ def extract_tiktok_transcripts(urls):
         # Expect each item to have at least {"url": ..., "transcript": ...}
         url        = item.get("url")
         description = item.get("description") or item.get("text") or ""
-        transcript = item.get("transcript", "").strip()
+        if item.get("transcript", ""):
+            transcript = item.get("transcript", "").strip()
+        else:
+            transcript = "No Transcript"
         results.append((url, description, transcript))
 
     print(f"[INFO] Extracted {len(results)} transcripts.")
     return results
-
+ 
 
 if __name__ == "__main__":
     sample_videos = [
