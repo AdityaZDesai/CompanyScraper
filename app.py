@@ -116,7 +116,7 @@ def search():
             print(f"[ERROR] {error_msg}")
             api_errors.append(error_msg)
 
-    results_tiktok = search_tiktok(brand_keyword, 40)
+    results_tiktok = search_tiktok(brand, 40)
     tiktok_urls = [result.get("link") for result in results_tiktok if result.get("link")]
     tiktok_transcripts = []
     if tiktok_urls:

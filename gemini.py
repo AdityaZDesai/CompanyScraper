@@ -3,6 +3,8 @@
 import os
 from google import genai
 from dotenv import load_dotenv
+from tiktok import search_tiktok
+from tiktok_transcript import extract_tiktok_transcripts
 
 
 load_dotenv() 
@@ -39,24 +41,26 @@ def batch_summarize_urls_with_gemini(brand, description, url_snippet_pairs, batc
 
         # Build the combined prompt
         prompt = f"""
-You're analyzing content for negative mentions of the brand "{brand}".
-Business description: {description}
+You are a TikTok content analyst. For each video below, carefully read the video description and full transcript, then identify any negative mentions, criticisms, complaints, warnings or expressions of dissatisfaction about the brand "{brand}". Think step-by-step:
 
-Review each of these items and summarize any negative content about {brand}.
-If the content mentions the brand name (or similar), include it. I have included the transcript of each video, along with the video description.
-Otherwise respond "UNRELATED".
-The source is always Tiktok.
-For each item, provide a summary in this format:
-ITEM 1: 
-SOURCE: [TikTok]
-SUMMARY: [summary or 'No negative content' or 'UNRELATED']
+1. Scan the description for any negative words or phrases (e.g. “scam,” “rip-off,” “unprofessional,” “beware,” “terrible,” etc.).
+2. Scan the transcript for the same, and look for tone—questions about quality, service, or integrity count as negative.
+3. If you find any negative content, summarize it concisely. If you find multiple distinct complaints, list them.
+4. If you find no negative content, explicitly respond “No negative content.”
 
-ITEM 2: 
-SOURCE: [TikTok]
-SUMMARY: [summary or 'No negative content' or 'UNRELATED']
+Keep the same order as the input list. The source for every item is TikTok. Use this exact output format:
 
+ITEM 1:
+URL: <video URL>
+SOURCE: TikTok
+SUMMARY: [If Yes, a one- or two-sentence summary of all negative points; if No, “No negative content”]
 
+ITEM 2:
+URL: <video URL>
+SOURCE: TikTok
+SUMMARY: […and so on…]
 
+Now process each of these {len(batch)} videos:
 """
 
         for idx, (url, snippet, transcript) in enumerate(batch, start=1):
@@ -65,7 +69,6 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
         # Call Gemini
         try:
             result_text = call_gemini_api(prompt)
-            print(result_text)
         except Exception as e:
             print(f"[ERROR] Gemini API call failed: {e}")
             continue
@@ -109,7 +112,15 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
             else:
                 source = "other"
 
-            if summary and not ("unrelated" in summary.lower() or "no negative content" in summary.lower()):
+            # Debug the summary extraction
+            print(f"[DEBUG] Raw summary: '{summary}'")
+            if summary:
+                print(f"[DEBUG] Contains 'unrelated': {'unrelated' in summary.lower()}")
+                print(f"[DEBUG] Contains 'no negative content': {'no negative content' in summary.lower()}")
+            
+            # Fix the condition and add more robust checking
+            if summary and not any(phrase in summary.lower() for phrase in ["unrelated", "no negative content"]):
+                print(f"[DEBUG] Adding result for URL: {url}")
                 summarized.append({
                     "url":     url,
                     "summary": summary,
@@ -122,36 +133,69 @@ SUMMARY: [summary or 'No negative content' or 'UNRELATED']
 
 
 if __name__ == "__main__":
-    # Test the batch_summarize_urls_with_gemini function
-    print("Testing batch_summarize_urls_with_gemini function...")
+    print("Starting TikTok scraping and analysis for 'fba brand builder'...")
     
-    # Sample data for testing
-    test_brand = "TestBrand"
-    test_description = "A company that sells premium widgets and gadgets."
+    # Step 1: Search for TikTok videos
+    brand_keyword = "fba brand builder"
+    print(f"[INFO] Searching TikTok for: {brand_keyword}")
+    tiktok_results = search_tiktok(brand_keyword, 100)  # Limiting to 10 for testing
     
-    # Sample URL data with transcripts
-    test_urls = [
-        ("https://example.com/page1", "TestBrand is mentioned in this snippet with some negative comments.", "This is a transcript of video content"),
-        ("https://example.com/page2", "Another snippet about TestBrand with criticism.", "Another transcript with spoken words"),
-        ("https://tiktok.com/video1", "TikTok video about TestBrand", "Transcript of someone talking about TestBrand products"),
-    ]
+    if not tiktok_results:
+        print("[ERROR] No TikTok videos found")
+        exit(1)
     
-    # Run the function with test data
-    results = batch_summarize_urls_with_gemini(test_brand, test_description, test_urls, batch_size=3)
+    print(f"[INFO] Found {len(tiktok_results)} TikTok videos")
     
-    # Display results
-    print("\nResults from batch_summarize_urls_with_gemini:")
-    print("-" * 50)
-    for i, result in enumerate(results, 1):
-        print(f"Result {i}:")
-        print(f"URL: {result['url']}")
-        print(f"Source: {result['source']}")
-        print(f"Summary: {result['summary']}")
-        print("-" * 50)
+    # Step 2: Extract URLs for transcript processing
+    tiktok_urls = [result.get("link") for result in tiktok_results if result.get("link")]
+    print(f"[INFO] Extracting transcripts for {len(tiktok_urls)} TikTok URLs")
     
-    # If no results were returned
-    if not results:
-        print("No relevant results found.")
+    # Step 3: Get transcripts
+    try:
+        transcripts = extract_tiktok_transcripts(tiktok_urls)
+        print(f"[INFO] Successfully extracted {len(transcripts)} transcripts")
+    except Exception as e:
+        print(f"[ERROR] Failed to extract transcripts: {e}")
+        transcripts = []
+    
+    # Step 4: Prepare data for batch processing
+    url_snippet_transcript = []
+    
+    # Use the transcripts directly as they already contain URL, description, and transcript
+    for url, description, transcript in transcripts:
+        # Use the description from the transcript data
+        snippet = description if description else "No description available"
+        transcript_text = transcript if transcript else "No transcript available"
+        
+        url_snippet_transcript.append((url, snippet, transcript_text))
+    
+    # Step 5: Process with Gemini
+    if url_snippet_transcript:
+        print("\n[INFO] Processing TikTok content with Gemini...")
+        brand = "X"
+        description = "A company that helps Amazon sellers build and grow their private label brands on Amazon FBA."
+        
+        results = batch_summarize_urls_with_gemini(
+            brand, 
+            description, 
+            url_snippet_transcript, 
+            batch_size=5  # Process in small batches for testing
+        )
+        
+        # Step 6: Display results
+        print("\nResults from TikTok analysis:")
+        print("-" * 70)
+        if results:
+            for i, result in enumerate(results, 1):
+                print(f"Result {i}:")
+                print(f"URL: {result['url']}")
+                print(f"Source: {result['source']}")
+                print(f"Summary: {result['summary']}")
+                print("-" * 70)
+        else:
+            print("No relevant negative content found in the TikTok videos.")
+    else:
+        print("[WARNING] No valid TikTok content to process")
     
     print("\nTest completed.")
     
