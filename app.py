@@ -70,7 +70,6 @@ def search():
     brand_keyword = f"{brand} {keyword}"
     queries = [f"{brand_keyword} {kw}" for kw in NEGATIVE_KEYWORDS]
     all_results = []
-    results_fed_tiktok = generate_tiktok_keywords(brand_keyword)
 
     # 
     # Track any API errors

@@ -9,7 +9,7 @@ load_dotenv()
 def generate_tiktok_keywords(brand_keyword):
     try:
         # 1. Get online search results from your custom API
-        results_fed_tiktok = search_search1api(brand_keyword, 10)
+        results_fed_tiktok = search_search1api(brand_keyword, 20)
         
         if not results_fed_tiktok:
             raise ValueError("No results returned from Search1API")
@@ -60,7 +60,7 @@ def combined_tiktok_results(brand, brandkeyword):
     for word in keywords:
         search_query = f"{brand} {word}"
         print(f"[INFO] Searching TikTok for: '{search_query}'")
-        tiktok_result = search_tiktok(search_query, max_results=10)
+        tiktok_result = search_tiktok(search_query, max_results=20)
         
         # Only add results with unique links
         for result in tiktok_result:

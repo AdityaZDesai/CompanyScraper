@@ -41,28 +41,28 @@ def batch_summarize_urls_with_gemini(brand, description, url_snippet_pairs, batc
 
         # Build the combined prompt
         prompt = f"""
-You are a TikTok content analyst. For each video below, carefully read the video description and full transcript, then identify any negative mentions, criticisms, complaints, warnings or expressions of dissatisfaction about the brand "{brand}". Think step-by-step:
-The business is described as:
-\"\"\"{description}\"\"\"
-1. Scan the description for any negative words or phrases (e.g. “scam,” “rip-off,” “unprofessional,” “beware,” “terrible,” etc.).
-2. Scan the transcript for the same, and look for tone—questions about quality, service, or integrity count as negative.
-3. If you find any negative content, summarize it concisely. If you find multiple distinct complaints, list them.
-4. If you find no negative content about {brand}, explicitly respond “No negative content.”
-5. It the description or transcript is not related to {brand} then respond "unrelated". 
+You are a TikTok content analyst. For each video below, carefully read the description and full transcript, then determine whether it contains **clear and direct negative mentions** about the brand **"{brand}"**. Think step-by-step:
 
-Keep the same order as the input list. The source for every item is TikTok. Use this exact output format:
+Business description:
+\"\"\"{description}\"\"\"
+
+Your task is to detect **criticism, complaints, or negative sentiment** related specifically to this brand. Follow these strict rules:
+
+1. If the brand is not explicitly mentioned or clearly implied in either the description or transcript, respond **"unrelated"**.
+2. If the content is a generic post, a review of a different brand, or just promotional with no clear connection to "{brand}", mark it as **"unrelated"**.
+3. If the content is related to the brand but contains **no criticism, no warning, and no negative opinion**, write **"No negative content"**.
+4. If the content includes **any dissatisfaction, warning, poor experience, scam suspicion, or cautionary tone**, summarize it in 1–2 sentences.
+5. If there are **multiple distinct negative points**, summarize each briefly.
+6. Keep the output format **exactly** as shown below. Do not add extra text or commentary.
+
+Use this exact format:
 
 ITEM 1:
 URL: <video URL>
 SOURCE: TikTok
-SUMMARY: [If Yes, a one- or two-sentence summary of all negative points; if No, “No negative content” or not relevant please respond "unrelated"]
+SUMMARY: [A one- or two-sentence summary of negative mentions, or “No negative content”, or “unrelated”]
 
-ITEM 2:
-URL: <video URL>
-SOURCE: TikTok
-SUMMARY: […and so on…]
-
-Now process each of these {len(batch)} videos:
+Now review the following {len(batch)} TikTok videos:
 """
 
         for idx, (url, snippet, transcript) in enumerate(batch, start=1):
