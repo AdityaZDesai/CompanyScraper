@@ -1,8 +1,54 @@
 from apify_client import ApifyClient
 import os
 from dotenv import load_dotenv
+from gemini import call_gemini_api
+from searchapi import search_search1api
 
 load_dotenv()
+
+def generate_tiktok_keywords(brand_keyword):
+    try:
+        # 1. Get online search results from your custom API
+        results_fed_tiktok = search_search1api(brand_keyword, 10)
+        
+        if not results_fed_tiktok:
+            raise ValueError("No results returned from Search1API")
+
+        # 2. Create a formatted list of search result snippets (limit to top 5 for clarity)
+        top_snippets = results_fed_tiktok[:5]
+        combined_text = "\n".join(f"- {result}" for result in top_snippets)
+
+        # 3. Formulate Gemini prompt with strict instructions
+        prompt = (
+            f"You are an expert in social media discovery.\n\n"
+            f"Based on the following Google search results about the brand '{brand_keyword}', "
+            f"give me a list of **5 short keywords or phrases only** that can be used to search TikTok for related videos. "
+            f"Do not write any full sentences or descriptions—just output the keywords in list format.\n\n"
+            f"{combined_text}\n\n"
+            f"Focus on TikTok trends, product names, and brand-related hashtags or slang."
+        )
+
+        # 4. Call Gemini
+        response = call_gemini_api(prompt)
+
+        # 5. Parse and clean Gemini response into keyword list
+        lines = response.strip().splitlines()
+        keywords = []
+
+        for line in lines:
+            clean = line.strip().lstrip("-*1234567890. ").strip()
+            if clean:
+                if ',' in clean:
+                    keywords.extend([kw.strip() for kw in clean.split(',')])
+                else:
+                    keywords.append(clean)
+
+        return keywords[:5]
+
+    except Exception as e:
+        print(f"[ERROR] generate_tiktok_keywords failed: {e}")
+        return []
+
 
 def search_tiktok(query, max_results=20):
     """
@@ -62,9 +108,10 @@ def search_tiktok(query, max_results=20):
 
 # Example usage (only runs when script is executed directly)
 if __name__ == "__main__":
-    results = search_tiktok("test query")
-    for result in results:
-        print("Video URL:", result.get("link"))
-        print("Description:", result.get("snippet"))
-        print("-" * 40)
+    # results = search_tiktok("test query")
+    # for result in results:
+    #     print("Video URL:", result.get("link"))
+    #     print("Description:", result.get("snippet"))
+    #     print("-" * 40)
+    print(generate_tiktok_keywords("try spartan hair"))
 

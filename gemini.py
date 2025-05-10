@@ -3,7 +3,6 @@
 import os
 from google import genai
 from dotenv import load_dotenv
-from tiktok import search_tiktok
 from tiktok_transcript import extract_tiktok_transcripts
 
 
@@ -27,6 +26,7 @@ def call_gemini_api(prompt: str) -> str:
     return response.text
 
 
+
 # ─── Rewritten batch_summarize_urls ───────────────────────────────────────────
 def batch_summarize_urls_with_gemini(brand, description, url_snippet_pairs, batch_size=5):
     """
@@ -48,13 +48,14 @@ The business is described as:
 2. Scan the transcript for the same, and look for tone—questions about quality, service, or integrity count as negative.
 3. If you find any negative content, summarize it concisely. If you find multiple distinct complaints, list them.
 4. If you find no negative content, explicitly respond “No negative content.”
+5. It the description or transcript is not related to {brand} then respond "unrelated". 
 
 Keep the same order as the input list. The source for every item is TikTok. Use this exact output format:
 
 ITEM 1:
 URL: <video URL>
 SOURCE: TikTok
-SUMMARY: [If Yes, a one- or two-sentence summary of all negative points; if No, “No negative content”]
+SUMMARY: [If Yes, a one- or two-sentence summary of all negative points; if No, “No negative content” or not relevant please respond "unrelated"]
 
 ITEM 2:
 URL: <video URL>
@@ -134,6 +135,8 @@ Now process each of these {len(batch)} videos:
 
 
 if __name__ == "__main__":
+    from tiktok import search_tiktok
+
     print("Starting TikTok scraping and analysis for 'fba brand builder'...")
     
     # Step 1: Search for TikTok videos
@@ -173,7 +176,8 @@ if __name__ == "__main__":
     # Step 5: Process with Gemini
     if url_snippet_transcript:
         print("\n[INFO] Processing TikTok content with Gemini...")
-        brand = "X"
+        brand = "fba brand builder"
+
         description = "A company that helps Amazon sellers build and grow their private label brands on Amazon FBA."
         
         results = batch_summarize_urls_with_gemini(

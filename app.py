@@ -7,9 +7,10 @@ from openai import OpenAI
 from bs4 import BeautifulSoup
 from drive import upload_to_folder
 from weasyprint import HTML
-from tiktok import search_tiktok
+from tiktok import search_tiktok, generate_tiktok_keywords
 from tiktok_transcript import extract_tiktok_transcripts
 from gemini import batch_summarize_urls_with_gemini, call_gemini_api
+from searchapi import *
 
 
 load_dotenv()  # <-- Don't forget to load .env variables
@@ -69,7 +70,9 @@ def search():
     brand_keyword = f"{brand} {keyword}"
     queries = [f"{brand_keyword} {kw}" for kw in NEGATIVE_KEYWORDS]
     all_results = []
-    
+    results_fed_tiktok = generate_tiktok_keywords(brand_keyword)
+
+    # 
     # Track any API errors
     api_errors = []
 
@@ -77,23 +80,23 @@ def search():
         print(f"[DEBUG] Searching with query: {query}")
         try:
             # Add source information to each result
-            results = search_search1api(query)
+            results = search_search1api(query, MAX_RESULTS)
             for result in results:
                 result['source'] = 'google'
                 
-            results_reddit = search_search1api_reddit(query)
+            results_reddit = search_search1api_reddit(query, MAX_RESULTS)
             for result in results_reddit:
                 result['source'] = 'reddit'
                 
-            results_youtube = search_search1api_youtube(query)
+            results_youtube = search_search1api_youtube(query, MAX_RESULTS)
             for result in results_youtube:
                 result['source'] = 'youtube'
                 
-            results_bing = search_search1api_bing(query)
+            results_bing = search_search1api_bing(query, MAX_RESULTS)
             for result in results_bing:
                 result['source'] = 'bing'
             
-            results_yahoo = search_search1api_yahoo(query)
+            results_yahoo = search_search1api_yahoo(query, MAX_RESULTS)
             for result in results_yahoo:
                 result['source'] = 'yahoo'
             
@@ -221,138 +224,6 @@ def generate_pdf(grouped_results, brand):
     os.remove(pdf_filename)  # Clean up the local file
     print(f'PDF Uploaded {file_id}')
     return f'PDF uploaded! File ID: {file_id}'
-
-
-
-
-def search_search1api(query):
-    url = "https://api.search1api.com/search"
-    headers = {
-        "Authorization": f"Bearer {SEARCH1_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "search_service": "google",  # or "all" if supported
-        "max_results": MAX_RESULTS,
-        "crawl_results": 0,
-        "image": False,
-        "language": ""
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
-        return data.get("results", [])
-    except Exception as e:
-        print(f"[ERROR] Search1API error for query '{query}': {e}")
-        return []
-
-
-def search_search1api_youtube(query):
-    url = "https://api.search1api.com/search"
-    headers = {
-        "Authorization": f"Bearer {SEARCH1_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "search_service": "youtube",  # or "all" if supported
-        "max_results": MAX_RESULTS,
-        "crawl_results": 0,
-        "image": False,
-        "language": ""
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
-        return data.get("results", [])
-    except Exception as e:
-        print(f"[ERROR] Search1API error for query '{query}': {e}")
-        return []
-
-def search_search1api_yahoo(query):
-    url = "https://api.search1api.com/search"
-    headers = {
-        "Authorization": f"Bearer {SEARCH1_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "search_service": "yahoo",  # or "all" if supported
-        "max_results": MAX_RESULTS,
-        "crawl_results": 0,
-        "image": False,
-        "language": ""
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
-        return data.get("results", [])
-    except Exception as e:
-        print(f"[ERROR] Search1API error for query '{query}': {e}")
-        return []
-
-def search_search1api_bing(query):
-    url = "https://api.search1api.com/search"
-    headers = {
-        "Authorization": f"Bearer {SEARCH1_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "search_service": "bing",  # or "all" if supported
-        "max_results": MAX_RESULTS,
-        "crawl_results": 0,
-        "image": False,
-        "language": ""
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
-        return data.get("results", [])
-    except Exception as e:
-        print(f"[ERROR] Search1API error for query '{query}': {e}")
-        return []
-
-def search_search1api_reddit(query):
-    url = "https://api.search1api.com/search"
-    headers = {
-        "Authorization": f"Bearer {SEARCH1_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "search_service": "reddit",  # or "all" if supported
-        "max_results": MAX_RESULTS,
-        "crawl_results": 0,
-        "image": False,
-        "language": ""
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        print(f"[DEBUG] Raw API response: {data}")  # Print raw for debugging
-        return data.get("results", [])
-    except Exception as e:
-        print(f"[ERROR] Search1API error for query '{query}': {e}")
-        return []
-
-
-
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
