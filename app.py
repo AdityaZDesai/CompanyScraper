@@ -7,7 +7,7 @@ from openai import OpenAI
 from bs4 import BeautifulSoup
 from drive import upload_to_folder
 from weasyprint import HTML
-from tiktok import search_tiktok, generate_tiktok_keywords
+from tiktok import search_tiktok, generate_tiktok_keywords, combined_tiktok_results
 from tiktok_transcript import extract_tiktok_transcripts
 from gemini import batch_summarize_urls_with_gemini, call_gemini_api
 from searchapi import *
@@ -120,7 +120,7 @@ def search():
             print(f"[ERROR] {error_msg}")
             api_errors.append(error_msg)
 
-    results_tiktok = search_tiktok(brand, 100)
+    results_tiktok = combined_tiktok_results(brand, brand_keyword)
     tiktok_urls = [result.get("link") for result in results_tiktok if result.get("link")]
     tiktok_transcripts = []
     if tiktok_urls:

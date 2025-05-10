@@ -47,7 +47,7 @@ The business is described as:
 1. Scan the description for any negative words or phrases (e.g. “scam,” “rip-off,” “unprofessional,” “beware,” “terrible,” etc.).
 2. Scan the transcript for the same, and look for tone—questions about quality, service, or integrity count as negative.
 3. If you find any negative content, summarize it concisely. If you find multiple distinct complaints, list them.
-4. If you find no negative content, explicitly respond “No negative content.”
+4. If you find no negative content about {brand}, explicitly respond “No negative content.”
 5. It the description or transcript is not related to {brand} then respond "unrelated". 
 
 Keep the same order as the input list. The source for every item is TikTok. Use this exact output format:
@@ -135,14 +135,15 @@ Now process each of these {len(batch)} videos:
 
 
 if __name__ == "__main__":
-    from tiktok import search_tiktok
+    from tiktok import search_tiktok, combined_tiktok_results
 
     print("Starting TikTok scraping and analysis for 'fba brand builder'...")
     
     # Step 1: Search for TikTok videos
-    brand_keyword = "fba brand builder"
+    brand_keyword = "fba brand builder amazon"
+    brand = "fba brand builder"
     print(f"[INFO] Searching TikTok for: {brand_keyword}")
-    tiktok_results = search_tiktok(brand_keyword, 100)  # Limiting to 10 for testing
+    tiktok_results = combined_tiktok_results(brand, brand_keyword) # Limiting to 10 for testing
     
     if not tiktok_results:
         print("[ERROR] No TikTok videos found")

@@ -50,6 +50,29 @@ def generate_tiktok_keywords(brand_keyword):
         return []
 
 
+def combined_tiktok_results(brand, brandkeyword):
+    total_results = []
+    seen_links = set()  # Track unique links
+    
+    keywords = generate_tiktok_keywords(brandkeyword)
+    print(f"[INFO] Generated TikTok search keywords: {keywords}")
+    
+    for word in keywords:
+        search_query = f"{brand} {word}"
+        print(f"[INFO] Searching TikTok for: '{search_query}'")
+        tiktok_result = search_tiktok(search_query, max_results=10)
+        
+        # Only add results with unique links
+        for result in tiktok_result:
+            link = result.get("link", "")
+            if link and link not in seen_links:
+                seen_links.add(link)
+                total_results.append(result)
+    
+    print(f"[INFO] Found {len(total_results)} unique TikTok results across all keywords")
+    return total_results
+
+
 def search_tiktok(query, max_results=20):
     """
     Search TikTok for the given query and return results in a format compatible with app.py
